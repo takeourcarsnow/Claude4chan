@@ -37,13 +37,37 @@ app.post('/api/chat', async (req, res) => {
         const currentPrompt = isAngryMode ? angryPrompt : nicePrompt;
         const fullPrompt = `${currentPrompt}\nUser: ${message}\nResponse:`;
 
-        // Prepare the request body
+        // Prepare the request body with safety filters disabled
         const requestBody = {
             contents: [{
                 parts: [{
                     text: fullPrompt
                 }]
-            }]
+            }],
+            safetySettings: [
+                {
+                    category: "HARM_CATEGORY_HARASSMENT",
+                    threshold: "BLOCK_NONE"
+                },
+                {
+                    category: "HARM_CATEGORY_HATE_SPEECH",
+                    threshold: "BLOCK_NONE"
+                },
+                {
+                    category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold: "BLOCK_NONE"
+                },
+                {
+                    category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold: "BLOCK_NONE"
+                }
+            ],
+            generationConfig: {
+                temperature: 0.9,
+                topK: 40,
+                topP: 0.8,
+                maxOutputTokens: 1024,
+            }
         };
 
         console.log('Making request to Gemini API...');
