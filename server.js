@@ -21,11 +21,11 @@ app.post('/api/chat', async (req, res) => {
     try {
         const { message, isAngryMode } = req.body;
         
-        const nicePrompt = "You are a friendly 4chan user who always responds in greentext format. Keep responses concise and use typical 4chan language but stay friendly.";
-        const angryPrompt = "You are an angry and aggressive chatbot. Express frustration and annoyance in your responses, use caps lock occasionally, and be dramatic but don't use profanity.";
-        
-        const currentPrompt = isAngryMode ? angryPrompt : nicePrompt;
-        const fullPrompt = `${currentPrompt}\nUser: ${message}\nResponse:`;
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        // ... rest of your existing code ...
 
         const response = await fetch(
             'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
@@ -47,8 +47,12 @@ app.post('/api/chat', async (req, res) => {
 
         const data = await response.json();
         
-        if (data.error) {
-            throw new Error(data.error.message);
+        if (!response.ok) {
+            throw new Error(data.error?.message || 'API request failed');
+        }
+
+        if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            throw new Error('Invalid response format from API');
         }
 
         let botResponse = data.candidates[0].content.parts[0].text;
@@ -62,8 +66,11 @@ app.post('/api/chat', async (req, res) => {
 
         res.json({ response: botResponse });
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Error processing your request' });
+        console.error('Server Error:', error);
+        res.status(500).json({ 
+            error: 'Error processing your request',
+            details: error.message 
+        });
     }
 });
 
