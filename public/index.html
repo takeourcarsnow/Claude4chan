@@ -1,3 +1,4 @@
+<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,12 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dual Personality Terminal</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="terminal">
         <div class="terminal-header">
             <div class="terminal-title">DUAL-PERSONALITY-BOT v1.0</div>
             <div class="terminal-controls">
+                <button id="clearButton" class="control-button" title="Clear History">
+                    <i class="fas fa-trash"></i>
+                </button>
                 <span class="control red"></span>
                 <span class="control yellow"></span>
                 <span class="control green"></span>
@@ -36,11 +41,15 @@
         <div id="chat-container" class="chat-container">
             <!-- Chat messages will appear here -->
         </div>
-<div class="input-container">
-    <span class="prompt">></span>
-    <input type="text" id="userInput" placeholder="Type your message...">
-    <button id="sendButton">Send</button>
-</div>
+        <div id="generating-indicator" class="generating-indicator hidden">
+            <div class="spinner"></div>
+            <span>Generating response...</span>
+        </div>
+        <div class="input-container">
+            <span class="prompt">></span>
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <button id="sendButton">Send</button>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
