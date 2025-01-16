@@ -19,6 +19,10 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Message is required' });
         }
 
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error('Gemini API key is not configured');
+        }
+
         console.log('Received chat request:', {
             message,
             isAngryMode,
@@ -33,8 +37,6 @@ app.post('/api/chat', async (req, res) => {
         const currentPrompt = isAngryMode ? angryPrompt : nicePrompt;
         const fullPrompt = `${currentPrompt}\nUser: ${message}\nResponse:`;
 
-        console.log('Sending request to Gemini API with prompt:', fullPrompt);
-
         // Prepare the request body
         const requestBody = {
             contents: [{
@@ -44,14 +46,14 @@ app.post('/api/chat', async (req, res) => {
             }]
         };
 
-        // Make request to Gemini API
+        console.log('Making request to Gemini API...');
+        
         const response = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
             {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(requestBody)
             }
@@ -90,11 +92,6 @@ app.post('/api/chat', async (req, res) => {
             details: error.message 
         });
     }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // API key check endpoint
