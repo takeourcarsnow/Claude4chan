@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual Personality Terminal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-title">DUAL-PERSONALITY-BOT v1.0</div>
+            <div class="terminal-controls">
+                <span class="control red"></span>
+                <span class="control yellow"></span>
+                <span class="control green"></span>
+            </div>
+        </div>
+        <div class="ascii-art">
+            <pre>
+     _____ _____ __  __ _____ _   _ _____
+    |  __ \_   _|  \/  |_   _| \ | |_   _|
+    | |  \/ | | | \  / | | | |  \| | | |
+    | | __  | | | |\/| | | | | . ` | | |
+    | |_\ \_| |_| |  | |_| |_| |\  |_| |_
+     \____/_____|_|  |_|_____|_| \_|_____|
+            </pre>
+        </div>
+        <div class="personality-switch">
+            <label class="switch">
+                <input type="checkbox" id="personalityToggle">
+                <span class="slider"></span>
+            </label>
+            <span class="personality-label">Nice Mode / Angry Mode</span>
+        </div>
+        <div id="chat-container" class="chat-container">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div class="input-container">
+            <span class="prompt">></span>
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
