@@ -1,9 +1,11 @@
-// Wait for DOM to load
+// public/script.js
 document.addEventListener('DOMContentLoaded', () => {
     const chatContainer = document.getElementById('chat-container');
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
     const personalityToggle = document.getElementById('personalityToggle');
+    const clearButton = document.getElementById('clearButton');
+    const generatingIndicator = document.getElementById('generating-indicator');
     
     let isAngryMode = false;
 
@@ -13,38 +15,55 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Personality mode changed:', isAngryMode ? 'Angry' : 'Nice');
     });
 
+    // Clear chat history
+    clearButton.addEventListener('click', () => {
+        chatContainer.innerHTML = '';
+        addMessageToChat('bot', 'Chat history cleared. How can I help you?');
+    });
+
+    // Function to copy message text
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Show temporary success message
+            const notification = document.createElement('div');
+            notification.textContent = 'Copied to clipboard!';
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.left = '50%';
+            notification.style.transform = 'translateX(-50%)';
+            notification.style.backgroundColor = 'var(--terminal-text)';
+            notification.style.color = 'var(--terminal-bg)';
+            notification.style.padding = '10px 20px';
+            notification.style.borderRadius = '5px';
+            notification.style.zIndex = '1000';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+        });
+    }
+
     // Function to add messages to chat
     function addMessageToChat(sender, message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}-message`;
         
-        // Create a pre element for maintaining formatting
-        const preElement = document.createElement('pre');
-        preElement.textContent = message;
-        messageDiv.appendChild(preElement);
+        const textContent = document.createElement('pre');
+        textContent.textContent = message;
+        messageDiv.appendChild(textContent);
+
+        // Add copy button for bot messages
+        if (sender === 'bot') {
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyButton.addEventListener('click', () => copyToClipboard(message));
+            messageDiv.appendChild(copyButton);
+        }
         
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
-        
-        // Add typing effect for bot messages
-        if (sender === 'bot') {
-            addTypingEffect(preElement);
-        }
-    }
-
-    // Typing effect function
-    function addTypingEffect(element) {
-        const text = element.textContent;
-        element.textContent = '';
-        let i = 0;
-        const interval = setInterval(() => {
-            if (i < text.length) {
-                element.textContent += text.charAt(i);
-                i++;
-            } else {
-                clearInterval(interval);
-            }
-        }, 20);
     }
 
     // Main send message function
@@ -56,11 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessageToChat('user', message);
         userInput.value = '';
 
-        try {
-            // Show loading message
-            const loadingId = 'loading-' + Date.now();
-            addMessageToChat('bot', 'Processing...');
+        // Show generating indicator
+        generatingIndicator.classList.remove('hidden');
 
+        try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
@@ -74,9 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             
-            // Remove loading message
-            const loadingMessage = chatContainer.lastElementChild;
-            chatContainer.removeChild(loadingMessage);
+            // Hide generating indicator
+            generatingIndicator.classList.add('hidden');
 
             if (data.error) {
                 throw new Error(data.error);
@@ -85,19 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
             addMessageToChat('bot', data.response);
         } catch (error) {
             console.error('Error:', error);
+            generatingIndicator.classList.add('hidden');
             addMessageToChat('bot', 'Error processing your request. Please try again.');
         }
     }
 
     // Event listeners
-    sendButton.addEventListener('click', () => {
-        console.log('Send button clicked');
-        sendMessage();
-    });
-
+    sendButton.addEventListener('click', sendMessage);
     userInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            console.log('Enter key pressed');
             sendMessage();
         }
     });
