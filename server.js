@@ -118,6 +118,15 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        apiKey: process.env.GEMINI_API_KEY ? 'configured' : 'missing'
+    });
+});
+
 // API key check endpoint
 app.get('/api/check', (req, res) => {
     if (process.env.GEMINI_API_KEY) {
