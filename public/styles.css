@@ -1,7 +1,15 @@
+/* public/styles.css */
 :root {
     --terminal-bg: #0a0a0a;
     --terminal-text: #00ff00;
     --terminal-header: #1a1a1a;
+    --error-red: #ff4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
@@ -10,16 +18,23 @@ body {
     background-color: #000;
     font-family: 'Courier New', monospace;
     color: var(--terminal-text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .terminal {
+    width: 100%;
     max-width: 900px;
-    margin: 0 auto;
     background-color: var(--terminal-bg);
     border: 2px solid var(--terminal-text);
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
 }
 
 .terminal-header {
@@ -33,6 +48,21 @@ body {
 .terminal-controls {
     display: flex;
     gap: 8px;
+    align-items: center;
+}
+
+.control-button {
+    background: none;
+    border: none;
+    color: var(--terminal-text);
+    cursor: pointer;
+    padding: 5px;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+}
+
+.control-button:hover {
+    color: var(--error-red);
 }
 
 .control {
@@ -47,13 +77,14 @@ body {
 
 .ascii-art {
     text-align: center;
-    padding: 20px;
+    padding: 10px;
     color: var(--terminal-text);
     text-shadow: 0 0 5px var(--terminal-text);
+    font-size: 0.8em;
 }
 
 .chat-container {
-    height: 400px;
+    flex-grow: 1;
     overflow-y: auto;
     padding: 20px;
     border-top: 1px solid rgba(0, 255, 0, 0.2);
@@ -64,6 +95,23 @@ body {
     padding: 10px;
     border-radius: 5px;
     animation: fadeIn 0.3s ease-in;
+    position: relative;
+}
+
+.message .copy-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: var(--terminal-text);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.message:hover .copy-button {
+    opacity: 1;
 }
 
 .user-message {
@@ -74,6 +122,29 @@ body {
 .bot-message {
     background-color: rgba(0, 0, 255, 0.1);
     border-left: 3px solid #0088ff;
+    white-space: pre-wrap;
+}
+
+.generating-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    gap: 10px;
+    background-color: rgba(0, 255, 0, 0.1);
+}
+
+.generating-indicator.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--terminal-text);
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 .input-container {
@@ -110,6 +181,52 @@ button {
 button:hover {
     background-color: #00cc00;
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .terminal {
+        height: 95vh;
+    }
+
+    .ascii-art {
+        display: none;
+    }
+
+    .terminal-title {
+        font-size: 0.9em;
+    }
+
+    .message {
+        font-size: 0.9em;
+    }
+
+    .input-container {
+        padding: 10px;
+    }
+
+    input[type="text"] {
+        font-size: 16px; /* Prevents zoom on mobile */
+    }
+
+    button {
+        padding: 8px 12px;
+    }
 }
 
 /* Personality Switch Styles */
@@ -158,32 +275,9 @@ button:hover {
 }
 
 input:checked + .slider {
-    background-color: #ff4444;
+    background-color: var(--error-red);
 }
 
 input:checked + .slider:before {
     transform: translateX(26px);
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 10px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--terminal-bg);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--terminal-text);
-    border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #00cc00;
 }
