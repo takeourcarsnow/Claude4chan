@@ -1,4 +1,3 @@
-// public/script.js
 document.addEventListener('DOMContentLoaded', () => {
     const chatContainer = document.getElementById('chat-container');
     const userInput = document.getElementById('userInput');
@@ -27,30 +26,46 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show temporary success message
             const notification = document.createElement('div');
             notification.textContent = 'Copied to clipboard!';
-            notification.style.position = 'fixed';
-            notification.style.bottom = '20px';
-            notification.style.left = '50%';
-            notification.style.transform = 'translateX(-50%)';
-            notification.style.backgroundColor = 'var(--terminal-text)';
-            notification.style.color = 'var(--terminal-bg)';
-            notification.style.padding = '10px 20px';
-            notification.style.borderRadius = '5px';
-            notification.style.zIndex = '1000';
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: var(--terminal-text);
+                color: var(--terminal-bg);
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 1000;
+                animation: fadeIn 0.3s ease-in;
+            `;
             document.body.appendChild(notification);
             
             setTimeout(() => {
-                notification.remove();
+                notification.style.animation = 'fadeIn 0.3s ease-in reverse';
+                setTimeout(() => notification.remove(), 300);
             }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy text:', err);
         });
+    }
+
+    // Function to format special content
+    function formatMessage(message) {
+        // Check if message contains code blocks or ASCII art
+        if (message.includes('```') || /[│├──└┘┐┌]/.test(message)) {
+            return `<div class="code-block">${message}</div>`;
+        }
+        return message;
     }
 
     // Function to add messages to chat
     function addMessageToChat(sender, message) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
+        messageDiv.className = `message ${sender}-message text-wrap`;
         
         const textContent = document.createElement('pre');
-        textContent.textContent = message;
+        textContent.className = 'text-wrap';
+        textContent.innerHTML = formatMessage(message);
         messageDiv.appendChild(textContent);
 
         // Add copy button for bot messages
@@ -64,12 +79,37 @@ document.addEventListener('DOMContentLoaded', () => {
         
         chatContainer.appendChild(messageDiv);
         chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+        // Add typing effect for bot messages
+        if (sender === 'bot') {
+            addTypingEffect(textContent);
+        }
+    }
+
+    // Typing effect function
+    function addTypingEffect(element) {
+        const text = element.textContent;
+        element.textContent = '';
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } else {
+                clearInterval(interval);
+            }
+        }, 20);
     }
 
     // Main send message function
     async function sendMessage() {
         const message = userInput.value.trim();
         if (!message) return;
+
+        // Disable input and button while generating
+        userInput.disabled = true;
+        sendButton.disabled = true;
 
         // Add user message to chat
         addMessageToChat('user', message);
@@ -104,16 +144,26 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error:', error);
             generatingIndicator.classList.add('hidden');
             addMessageToChat('bot', 'Error processing your request. Please try again.');
+        } finally {
+            // Re-enable input and button
+            userInput.disabled = false;
+            sendButton.disabled = false;
+            userInput.focus();
         }
     }
 
     // Event listeners
     sendButton.addEventListener('click', sendMessage);
+    
     userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             sendMessage();
         }
     });
+
+    // Focus input on page load
+    userInput.focus();
 
     // Initial greeting
     addMessageToChat('bot', 'Hello! I\'m your dual-personality chatbot. Toggle the switch to change between nice and angry mode!');
