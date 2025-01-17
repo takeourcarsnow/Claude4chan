@@ -14,7 +14,7 @@ app.use(express.static('public'));
 app.post('/api/chat', async (req, res) => {
     try {
         const { message, isAngryMode } = req.body;
-        
+
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
         }
@@ -30,9 +30,9 @@ app.post('/api/chat', async (req, res) => {
         });
 
         // Define prompts
-        const nicePrompt = "You are a friendly 4chan user who always responds in greentext format. Keep responses concise and use typical 4chan language but stay friendly.";
-        const angryPrompt = "You are an angry and aggressive chatbot. Express frustration and annoyance in your responses, use caps lock occasionally, and be dramatic but don't use profanity.";
-        
+        const nicePrompt = "a nice 4chan user answering in greentext. but do not mention that you are a 4chan user.";
+        const angryPrompt = "an extremely angry 4chan user answering in greentext. but do not mention that you are a 4chan user.";
+
         // Select prompt based on mode
         const currentPrompt = isAngryMode ? angryPrompt : nicePrompt;
         const fullPrompt = `${currentPrompt}\nUser: ${message}\nResponse:`;
@@ -71,7 +71,7 @@ app.post('/api/chat', async (req, res) => {
         };
 
         console.log('Making request to Gemini API...');
-        
+
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
             {
@@ -84,7 +84,7 @@ app.post('/api/chat', async (req, res) => {
         );
 
         const data = await response.json();
-        
+
         // Check for API errors
         if (!response.ok) {
             console.error('Gemini API error:', data);
@@ -101,7 +101,7 @@ app.post('/api/chat', async (req, res) => {
 
         // Format response for greentext if in nice mode
         if (!isAngryMode) {
-            botResponse = botResponse.split('\n').map(line => 
+            botResponse = botResponse.split('\n').map(line =>
                 line.startsWith('>') ? line : `>${line}`
             ).join('\n');
         }
@@ -111,17 +111,17 @@ app.post('/api/chat', async (req, res) => {
         res.json({ response: botResponse });
     } catch (error) {
         console.error('Server Error:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Error processing your request',
-            details: error.message 
+            details: error.message
         });
     }
 });
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'ok', 
+    res.json({
+        status: 'ok',
         timestamp: new Date().toISOString(),
         apiKey: process.env.GEMINI_API_KEY ? 'configured' : 'missing'
     });

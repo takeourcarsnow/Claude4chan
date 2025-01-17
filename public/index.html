@@ -6,12 +6,28 @@
     <title>Dual Personality Terminal</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tippy.js@6"></script>
+    <script src="https://platform.twitter.com/widgets.js"></script>
 </head>
 <body class="no-horizontal-scroll">
     <div class="terminal no-horizontal-scroll">
         <div class="terminal-header">
             <div class="terminal-title">DUAL-PERSONALITY-BOT v1.0</div>
             <div class="terminal-controls">
+                <button id="darkModeToggle" class="control-button" title="Toggle Dark/Light Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="saveHistoryButton" class="control-button" title="Save Chat History">
+                    <i class="fas fa-save"></i>
+                </button>
+                <a href="https://www.patreon.com/yourpage" target="_blank" class="control-button" title="Support on Patreon">
+                    <i class="fab fa-patreon"></i>
+                </a>
+                <button id="tweetButton" class="control-button" title="Share on Twitter">
+                    <i class="fab fa-twitter"></i>
+                </button>
                 <button id="clearButton" class="control-button" title="Clear History">
                     <i class="fas fa-trash"></i>
                 </button>

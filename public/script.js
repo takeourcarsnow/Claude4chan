@@ -5,8 +5,153 @@ document.addEventListener('DOMContentLoaded', () => {
     const personalityToggle = document.getElementById('personalityToggle');
     const clearButton = document.getElementById('clearButton');
     const generatingIndicator = document.getElementById('generating-indicator');
-    
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const saveHistoryButton = document.getElementById('saveHistoryButton');
+    const tweetButton = document.getElementById('tweetButton');
+
     let isAngryMode = false;
+    let chatHistory = [];
+    let isDarkMode = true;
+
+    // Load saved preferences and history
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode === 'false') {
+        toggleDarkMode();
+    }
+
+    const savedHistory = localStorage.getItem('chatHistory');
+    if (savedHistory) {
+        chatHistory = JSON.parse(savedHistory);
+        chatHistory.forEach(item => {
+            addMessageToChat(item.sender, item.message, false, true); // Indicate it's a restored message
+        });
+    }
+
+    function toggleDarkMode() {
+        isDarkMode = !isDarkMode;
+        document.body.classList.toggle('light-mode');
+        document.querySelector('.terminal').classList.toggle('light-mode');
+        localStorage.setItem('darkMode', isDarkMode);
+    }
+
+    function saveHistory() {
+        const historyStr = JSON.stringify(chatHistory);
+        const blob = new Blob([historyStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'chat-history.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Chat history saved!');
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function shareOnTwitter() {
+        const lastMessage = chatHistory[chatHistory.length - 1];
+        if (lastMessage) {
+            const tweetText = encodeURIComponent(`Check out this conversation with the Dual Personality Bot:\n\n"${lastMessage.message.substring(0, 180)}..."`);
+            window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
+        }
+    }
+
+    // Function to copy message text
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Copied to clipboard!');
+        }).catch(err => {
+            console.error('Error copying to clipboard:', err);
+            showToast('Failed to copy to clipboard.');
+        });
+    }
+
+    // Function to add message to chat container with typing effect
+    function addMessageToChat(sender, message, isNew = true, isRestored = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        messageDiv.classList.add(`${sender}-message`);
+
+        const pre = document.createElement('pre');
+        messageDiv.appendChild(pre);
+
+        const copyButton = document.createElement('button');
+        copyButton.classList.add('copy-button');
+        copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+        copyButton.addEventListener('click', () => copyToClipboard(message));
+        messageDiv.appendChild(copyButton);
+
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom
+
+        if (isNew && !isRestored) {
+            let index = 0;
+            const typingInterval = setInterval(() => {
+                if (index < message.length) {
+                    pre.textContent += message.charAt(index);
+                    index++;
+                    chatContainer.scrollTop = chatContainer.scrollHeight; // Keep scrolling
+                } else {
+                    clearInterval(typingInterval);
+                }
+            }, 20); // Adjust the typing speed (milliseconds per character)
+        } else {
+            pre.textContent = message; // Directly set text for restored messages
+        }
+
+        if (isNew) {
+            chatHistory.push({ sender, message, timestamp: new Date().toISOString() });
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        }
+    }
+
+    // Function to send message to the server
+    async function sendMessage() {
+        const message = userInput.value.trim();
+        if (message) {
+            addMessageToChat('user', message);
+            userInput.value = '';
+            generatingIndicator.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message, isAngryMode })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to send message');
+                }
+
+                const data = await response.json();
+                addMessageToChat('bot', data.response);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                addMessageToChat('bot', `Error: ${error.message}`);
+            } finally {
+                generatingIndicator.classList.add('hidden');
+            }
+        }
+    }
+
+    // Event listeners
+    sendButton.addEventListener('click', sendMessage);
+
+    userInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
 
     // Personality toggle handler
     personalityToggle.addEventListener('change', (e) => {
@@ -17,154 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear chat history
     clearButton.addEventListener('click', () => {
         chatContainer.innerHTML = '';
+        chatHistory = [];
+        localStorage.removeItem('chatHistory');
         addMessageToChat('bot', 'Chat history cleared. How can I help you?');
     });
 
-    // Function to copy message text
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            // Show temporary success message
-            const notification = document.createElement('div');
-            notification.textContent = 'Copied to clipboard!';
-            notification.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background-color: var(--terminal-text);
-                color: var(--terminal-bg);
-                padding: 10px 20px;
-                border-radius: 5px;
-                z-index: 1000;
-                animation: fadeIn 0.3s ease-in;
-            `;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'fadeIn 0.3s ease-in reverse';
-                setTimeout(() => notification.remove(), 300);
-            }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy text:', err);
-        });
-    }
-
-    // Function to format special content
-    function formatMessage(message) {
-        // Check if message contains code blocks or ASCII art
-        if (message.includes('```') || /[│├──└┘┐┌]/.test(message)) {
-            return `<div class="code-block">${message}</div>`;
-        }
-        return message;
-    }
-
-    // Function to add messages to chat
-    function addMessageToChat(sender, message) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message text-wrap`;
-        
-        const textContent = document.createElement('pre');
-        textContent.className = 'text-wrap';
-        textContent.innerHTML = formatMessage(message);
-        messageDiv.appendChild(textContent);
-
-        // Add copy button for bot messages
-        if (sender === 'bot') {
-            const copyButton = document.createElement('button');
-            copyButton.className = 'copy-button';
-            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-            copyButton.addEventListener('click', () => copyToClipboard(message));
-            messageDiv.appendChild(copyButton);
-        }
-        
-        chatContainer.appendChild(messageDiv);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        
-        // Add typing effect for bot messages
-        if (sender === 'bot') {
-            addTypingEffect(textContent);
-        }
-    }
-
-    // Typing effect function
-    function addTypingEffect(element) {
-        const text = element.textContent;
-        element.textContent = '';
-        let i = 0;
-        const interval = setInterval(() => {
-            if (i < text.length) {
-                element.textContent += text.charAt(i);
-                i++;
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            } else {
-                clearInterval(interval);
-            }
-        }, 20);
-    }
-
-    // Main send message function
-    async function sendMessage() {
-        const message = userInput.value.trim();
-        if (!message) return;
-
-        // Disable input and button while generating
-        userInput.disabled = true;
-        sendButton.disabled = true;
-
-        // Add user message to chat
-        addMessageToChat('user', message);
-        userInput.value = '';
-
-        // Show generating indicator
-        generatingIndicator.classList.remove('hidden');
-
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: message,
-                    isAngryMode: isAngryMode
-                })
-            });
-
-            const data = await response.json();
-            
-            // Hide generating indicator
-            generatingIndicator.classList.add('hidden');
-
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            addMessageToChat('bot', data.response);
-        } catch (error) {
-            console.error('Error:', error);
-            generatingIndicator.classList.add('hidden');
-            addMessageToChat('bot', 'Error processing your request. Please try again.');
-        } finally {
-            // Re-enable input and button
-            userInput.disabled = false;
-            sendButton.disabled = false;
-            userInput.focus();
-        }
-    }
-
-    // Event listeners
-    sendButton.addEventListener('click', sendMessage);
-    
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    // Focus input on page load
-    userInput.focus();
-
-    // Initial greeting
-    addMessageToChat('bot', 'Hello! I\'m your dual-personality chatbot. Toggle the switch to change between nice and angry mode!');
+    darkModeToggle.addEventListener('click', toggleDarkMode);
+    saveHistoryButton.addEventListener('click', saveHistory);
+    tweetButton.addEventListener('click', shareOnTwitter);
 });
